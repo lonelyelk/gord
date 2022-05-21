@@ -7,18 +7,19 @@ import (
 	"image/jpeg"
 	"log"
 	"math/rand"
+	"time"
 
 	"github.com/icza/mjpeg"
 )
 
 const (
-	width      = 200
-	height     = 200
-	cycles     = 10000
+	width      = 320
+	height     = 240
+	cycles     = 20000
 	fps        = 12
 	frameEvery = 40
-	seedn      = 20
-	seedr      = 5
+	seedn      = 30
+	seedr      = 4
 )
 
 type FloatNumber interface {
@@ -49,7 +50,7 @@ func f[T FloatNumber](x, y int) T {
 }
 
 func k[T FloatNumber](x, y int) T {
-	return 0.045 + (0.07-0.045)*T(width-x)/width
+	return 0.07 - (0.07-0.045)*T(width-x)/width
 	// return 0.041
 	// return 0.0649
 	// return 0.062
@@ -60,10 +61,13 @@ func toJpeg[T FloatNumber](a, b [][]T) ([]byte, error) {
 
 	for i := 0; i < height; i++ {
 		for j := 0; j < width; j++ {
-			if a[i][j]*0.4 >= b[i][j] {
+			if a[i][j]*0.2 >= b[i][j] {
 				img.Set(j, i, color.White)
-			} else {
+			} else if a[i][j]*0.8 <= b[i][j] {
 				img.Set(j, i, color.Black)
+			} else {
+				c := 65535 * (0.8*a[i][j] - b[i][j]) / (0.6 * a[i][j])
+				img.Set(j, i, color.Gray16{Y: uint16(c)})
 			}
 		}
 	}
@@ -92,6 +96,7 @@ func main() {
 			a1[i][j] = 1
 		}
 	}
+	rand.Seed(time.Now().Unix())
 	for c := 0; c < seedn; c++ {
 		x := rand.Intn(width)
 		y := rand.Intn(height)
@@ -105,7 +110,6 @@ func main() {
 				}
 			}
 		}
-
 	}
 	jpeg, err := toJpeg(a1, b1)
 	if err != nil {
@@ -132,6 +136,16 @@ func main() {
 				}) +
 					a1[i][j]*b1[i][j]*b1[i][j] -
 					(k[float32](j, i)+f[float32](j, i))*b1[i][j]
+				if a2[i][j] < 0 {
+					a2[i][j] = 0
+				} else if a2[i][j] > 1 {
+					a2[i][j] = 1
+				}
+				if b2[i][j] < 0 {
+					b2[i][j] = 0
+				} else if b2[i][j] > 1 {
+					b2[i][j] = 1
+				}
 			}
 		}
 		for i := 0; i < height; i++ {
