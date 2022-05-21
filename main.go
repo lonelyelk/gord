@@ -7,6 +7,7 @@ import (
 	"image/jpeg"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/icza/mjpeg"
@@ -44,16 +45,10 @@ func make2D[T FloatNumber](n, m int) [][]T {
 
 func f[T FloatNumber](x, y int) T {
 	return 0.01 + (0.1-0.01)*T(height-y)/height
-	// return 0.01
-	// return 0.0367
-	// return 0.0545
 }
 
 func k[T FloatNumber](x, y int) T {
 	return 0.07 - (0.07-0.045)*T(width-x)/width
-	// return 0.041
-	// return 0.0649
-	// return 0.062
 }
 
 func toJpeg[T FloatNumber](a, b [][]T) ([]byte, error) {
@@ -168,6 +163,17 @@ func main() {
 		jpeg, err := toJpeg(a1, b1)
 		if err != nil {
 			log.Fatal(err)
+		}
+		if c == cycles {
+			f, err := os.Create("final.jpg")
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer f.Close()
+			_, err = f.Write(jpeg)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		err = aw.AddFrame(jpeg)
 		if err != nil {
